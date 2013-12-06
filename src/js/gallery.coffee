@@ -194,8 +194,9 @@ abscureBox = new class AbcureBox
       .bind('dragstart', -> false)
       # .bind('swipeleft', @showNext.bind this)
       .bind 'swipeleft', =>
-        @showNext() unless @$img.__movin
-      .bind('swiperight', @showPrev.bind this)
+        @showNext() unless @$img.movable
+      .bind 'swiperight', =>
+        @showPrev() unless @$img.movable
       .bind('swiperight swipeleft', => @$footer.addClass('hidden'))
       .click(=> @$footer.addClass('hidden'))
 
@@ -224,16 +225,57 @@ abscureBox = new class AbcureBox
     @$imgCont.append @$img.show()
 
     @$img
-      .bind('move', ( ($el) ->
-              left = parseInt($el.css('left').match(/\d*/)[0]) or 0
-              top = parseInt($el.css('top').match(/\d*/)[0]) or 0
-              return (e) -> 
-                $el.__movin = yes
-                left = left + e.deltaX
-                top = top + e.deltaY
-                $el.css({left: left, top: top});
+      .bind('dblclick', (($el) ->
+              stages = ['', 'stage1', 'stage2']
+              now = 0
+              return ->
+                if document.body.offsetHeight > $el.height() and now is 0
+                  now++
+                $el.removeClass 'stage1 stage2'
+                $el.addClass stages[++now] or stages[now = 0]
+                $el.movin = now is 2
+                abscureBox.calcContMetric()
+                if now isnt 2
+                  $el.unbind 'move'
+                  if now is 1
+                    $el.css
+                      left: (if now isnt 0 then (document.body.offsetWidth - $el.width())/2 else 0)
+                      top: (if now isnt 0 then (document.body.offsetHeight - $el.height())/2 else 0)
+                    .movable = no
+                else
+                  $el.movable = yes
+                  $el.bind('move', ( ($el) ->
+                    left = (parseInt $el.css 'left') or 0
+                    top = (parseInt $el.css 'top') or 0
+                    return (e) -> 
+                      return unless $el.movable
+                      left += e.deltaX
+                      top += e.deltaY
+                      $el.css({left: left, top: top});
+                  )($el))
             )(@$img))
-      .bind 'moveend', => @$img.__movin = no    
+      .bind('mousewheel', (($el) => 
+              width = 0
+              height = 0
+              ratio = 0
+              setTimeout ->
+                width = $el.width()
+                height = $el.height()
+                ratio = height / width
+              , 10
+              return (e) =>
+                e.preventDefault()
+                $el.width(width += e.originalEvent.wheelDeltaY)
+                $el.height(height += ratio * e.originalEvent.wheelDeltaY)
+                @calcContMetric()
+                return false
+              )(@$img))
+      .bind('movestart', => @$img.movin = yes)
+      .bind('moveend', => @$img.movin = no)
+      .bind 'swipeleft', =>
+        @showNext() unless @$img.movable
+      .bind 'swiperight', =>
+        @showPrev() unless @$img.movable
 
     setTimeout =>
       @$img.addClass 'current'
@@ -271,13 +313,15 @@ abscureBox = new class AbcureBox
     abscureList.$el.hide()
 
   showNext: ->
-    @$img and @$img.hide()
+    return if @$img.movin
+    @$img and @$img.hide().unbind()
     @show abscureList.collection.getNext(@model), true
     # shareToggle false
     return false
 
   showPrev: ->
-    @$img and @$img.hide()
+    return if @$img.movin
+    @$img and @$img.hide().unbind()
     @show abscureList.collection.getPrev(@model), false
     # shareToggle false
     return false
@@ -285,7 +329,7 @@ abscureBox = new class AbcureBox
   hide: ->
     abscureList.$el.show()
     @$el.hide()
-    @$img and @$img.hide()
+    @$img and @$img.hide().unbind()
     @model = null
     @stop() if @playing
     shareToggle false
@@ -303,14 +347,14 @@ abscureBox = new class AbcureBox
   align: ->
     if @$img.innerWidth() is 0 || @$img.innerWidth() is 0
       setTimeout (=> @align()), 10
-    if @contWidth > @$img.innerWidth()
-      @$img.css('marginLeft', @contWidth/2 - @$img.innerWidth()/2)
-    else
-      @$img.css('marginLeft', 0)
-    if @contHeight > @$img.innerHeight()
-      @$img.css('marginTop', @contHeight/2 - @$img.innerHeight()/2)
-    else
-      @$img.css('marginTop', 0)
+    # if @contWidth > @$img.innerWidth()
+    @$img.css('left', @contWidth/2 - @$img.innerWidth()/2)
+    # else
+    #   @$img.css('left', 0)
+    # if @contHeight > @$img.innerHeight()
+    @$img.css('top', @contHeight/2 - @$img.innerHeight()/2)
+    # else
+    #   @$img.css('top', 0)
 
   setInterval: ->
     setTimeout =>

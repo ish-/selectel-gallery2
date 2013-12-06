@@ -52,6 +52,15 @@
         &.current {
             opacity: 1;
         }
+
+        &.stage1 {
+            max-height: inherit;
+        }
+
+        &.stage2 {
+            max-height: inherit;
+            max-width: inherit;
+        }
     }
 }
 
