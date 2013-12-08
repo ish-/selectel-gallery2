@@ -1,7 +1,7 @@
 ge = (q) ->
 	document.querySelector q
 
-AUTH = true
+AUTH = true ## REPLACE IT WITH AN BACKEND
 unless AUTH 
 	ge('.page_footer.error').innerHTML = 'Пароль неверный.'
 ge('.access').addEventListener 'submit', (e) ->

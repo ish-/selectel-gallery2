@@ -2,14 +2,8 @@
 psd
 sftp-config.json
 .DS_Store
-temp
+.temp
 *.sublime-*
-js/gallery.js
-js/gallery.min.js
-style.css
-style.min.css
-index.html
-index.min.html
 img/icon-*
 !/img/icon-retina
 img/social-*

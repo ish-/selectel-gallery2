@@ -7,7 +7,8 @@ module.exports = function(grunt) {
 		},
 		ejs: {
 			options: {
-				'fs': require('fs'),
+				fs: require('fs'),
+        		DEV: false,
 			},
 			gallery: {
 				cwd: 'src',
@@ -17,8 +18,9 @@ module.exports = function(grunt) {
 				expand: true
 			},
 			'gallery-dev': {
+        		options: {DEV: true},
 				cwd: 'src',
-				src: ['gallery.dev.ejs'],
+				src: ['gallery.ejs'],
 				dest: 'dist/',
 				ext: '.html',
 				expand: true
@@ -32,15 +34,16 @@ module.exports = function(grunt) {
 			}
 		},
 		concat: {
-			gallery: {
-				files: {'.temp/js/gallery.js': [
-					'src/js/vendor/jquery.min.js',
-					'src/js/vendor/jquery.event.move.js',
-					'src/js/vendor/jquery.event.swipe.js',
-					'src/js/vendor/jquery.appear.js',
-					'.temp/js/gallery.js',
-				]}
-			},
+			vendor: {
+        files: [
+          {'.temp/js/vendor.js': [
+            'src/js/vendor/jquery.min.js',
+            'src/js/vendor/jquery.event.move.js',
+            'src/js/vendor/jquery.event.swipe.js',
+            'src/js/vendor/jquery.appear.js',
+          ]},
+        ]
+      },
 			'vendor-dev': {
 				files: [
 					{'dist/js/vendor.js': [
@@ -54,25 +57,22 @@ module.exports = function(grunt) {
 		},
 		watch: {
 			coffee: {
-				files: ['src/js/gallery.coffee'],
+				files: ['src/js/*.coffee'],
 				tasks: ['coffee:gallery-dev'],
 			}
 		},
 		coffee: {
-			options: {
-
-			},
-			gallery: {
-				files: {
-					'.temp/js/gallery.js': 'src/js/gallery.coffee'
-				}
-			},
-			'gallery-dev': {
-				options: {
+      options: {
 					bare: true,
-				},
+      },
+      gallery: {
+        files: {
+          '.temp/js/gallery.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
+        }
+      },
+      'gallery-dev': {
 				files: {
-					'dist/js/app.js': 'src/js/gallery.coffee'
+					'dist/js/app.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
 				}
 			},
 			access: {
@@ -81,9 +81,10 @@ module.exports = function(grunt) {
 				}
 			},
 		},
+    clean: ['.temp', 'dist'],
 		uglify: {
 			gallery: {
-				files: { '.temp/js/gallery.js': ['.temp/js/gallery.js'] }
+				files: { '.temp/js/gallery.min.js': ['.temp/js/vendor.js', '.temp/js/gallery.js'] }
 			},
 			access: {
 				files: {'.temp/js/access.js': ['.temp/js/access.js']},
@@ -95,12 +96,13 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks('grunt-contrib-coffee');
 	grunt.loadNpmTasks('grunt-contrib-uglify');
 	grunt.loadNpmTasks('grunt-contrib-concat');
-	grunt.loadNpmTasks('grunt-contrib-watch');
+  grunt.loadNpmTasks('grunt-contrib-watch');
+	grunt.loadNpmTasks('grunt-contrib-clean');
 	grunt.loadNpmTasks('grunt-ejs');
 
-	grunt.registerTask('build:access', ['coffee:access', 'compass', 'uglify:access', 'ejs:access']);
-	grunt.registerTask('build:gallery', ['coffee:gallery', 'compass', 'concat:gallery', 'uglify:gallery', 'ejs:gallery']);
+	grunt.registerTask('build:access', ['clean', 'coffee:access', 'compass', 'uglify:access', 'ejs:access']);
+	grunt.registerTask('build:gallery', ['clean', 'coffee:gallery', 'compass', 'concat:vendor', 'uglify:gallery', 'ejs:gallery']);
 	grunt.registerTask('build', ['build:gallery', 'build:access']);
 
-	grunt.registerTask('build:gallery-dev', ['coffee:gallery-dev', 'concat:vendor-dev', 'compass', 'ejs:gallery-dev', 'watch:coffee']);
+	grunt.registerTask('build:gallery-dev', ['clean', 'coffee:gallery-dev', 'concat:vendor-dev', 'compass', 'ejs:gallery-dev', 'watch:coffee']);
 }

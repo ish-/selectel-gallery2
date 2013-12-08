@@ -1,12 +1,10 @@
-FLD = '__tmp/'
-URL = 'http://64815.selcdn.ru/' + FLD
-THUMBS_OFF = true
-
 abscureList = null
+PATH = ''
 
-reqAPI = ->
+reqAPI = (fld) ->
+  PATH = HOST + fld
   return $.ajax(
-    url: (URL or './') + "?format=json"
+    url: HOST + fld + "?format=json"
     beforeSend: (xhr) ->
       xhr.setRequestHeader('X-Web-Mode', 'listing')
   ).done (files, err) ->
@@ -26,7 +24,7 @@ reqAPI = ->
 
     abscureList = new ItemCollectionView models
 
-reqAPI '__tmp/'
+reqAPI FLD or ''
 
 ########################################################################################
 
@@ -72,7 +70,7 @@ class ItemModel
       dfd = new $.Deferred
       @__loadPromise = dfd.promise()
       @img = new Image
-      @img.src = URL + @attrs.name
+      @img.src = PATH + @attrs.name
       @img.onload = dfd.resolve.bind dfd, @img.src
       @img.onerror = dfd.reject
     return @__loadPromise
@@ -171,215 +169,7 @@ class ItemCollectionView
           if twoLastDigits not in [12,13,14] and lastDigit in [2,3,4] then 'а' else 'ов'
       ))
 
-abscureBox = new class AbcureBox
-  events:
-    'click .btn-close': 'hide'
-    'click .btn-next': 'showNext'
-    'click .btn-prev': 'showPrev'
-    'click .btn-play': 'play'
-    
-  constructor: ->
-    @$el = $('.light-box')
-    $(window).on 'resize orientationchange', => 
-      @calcContMetric()
-    @$btnLoad = @$el.find('.btn-download')
-    @$footer = @$el.find('.light-box-footer').on 'mouseenter', -> $(this).removeClass('hidden')
-    @$imgCont = @$el.find('.light-box-image')
-      .on 'transitionend', 'img.slide', (event) ->
-        if !$(event.target).hasClass('current')
-          $(this).remove()
-      .on 'click', (event) -> 
-        if event.target == this
-          _this.hide()
-      .bind('dragstart', -> false)
-      # .bind('swipeleft', @showNext.bind this)
-      .bind 'swipeleft', =>
-        @showNext() unless @$img.movable
-      .bind 'swiperight', =>
-        @showPrev() unless @$img.movable
-      .bind('swiperight swipeleft', => @$footer.addClass('hidden'))
-      .click(=> @$footer.addClass('hidden'))
-
-    $('body').on 'keydown', (event) =>
-      if event.keyCode in [39,37,32]
-        @$footer.addClass('hidden')
-      switch event.keyCode
-        when 39 then @showNext()
-        when 37 then @showPrev()
-        when 32 then @showNext()
-        when 27 then @hide()
-        when 13 then @fullscreen(event) if event.altKey
-
-    $('.btn-fullscreen').click fullscreen
-
-    for key, fn of @events
-      w = key.split /\s+/
-      @$el.on w[0], w[1], @[fn].bind this
-
-  __initImg: ->
-    @$imgCont
-      .find('.current')
-      .removeClass('current')
-    @$img = $(@model.img)
-    @$img.addClass 'loaded slide'
-    @$imgCont.append @$img.show()
-
-    @$img
-      .bind('dblclick', (($el) ->
-              stages = ['', 'stage1', 'stage2']
-              now = 0
-              return ->
-                if document.body.offsetHeight > $el.height() and now is 0
-                  now++
-                $el.removeClass 'stage1 stage2'
-                $el.addClass stages[++now] or stages[now = 0]
-                $el.movin = now is 2
-                abscureBox.calcContMetric()
-                if now isnt 2
-                  $el.unbind 'move'
-                  if now is 1
-                    $el.css
-                      left: (if now isnt 0 then (document.body.offsetWidth - $el.width())/2 else 0)
-                      top: (if now isnt 0 then (document.body.offsetHeight - $el.height())/2 else 0)
-                    .movable = no
-                else
-                  $el.movable = yes
-                  $el.bind('move', ( ($el) ->
-                    left = (parseInt $el.css 'left') or 0
-                    top = (parseInt $el.css 'top') or 0
-                    return (e) -> 
-                      return unless $el.movable
-                      left += e.deltaX
-                      top += e.deltaY
-                      $el.css({left: left, top: top});
-                  )($el))
-            )(@$img))
-      .bind('mousewheel', (($el) => 
-              width = 0
-              height = 0
-              ratio = 0
-              setTimeout ->
-                width = $el.width()
-                height = $el.height()
-                ratio = height / width
-              , 10
-              return (e) =>
-                e.preventDefault()
-                $el.width(width += e.originalEvent.wheelDeltaY)
-                $el.height(height += ratio * e.originalEvent.wheelDeltaY)
-                @calcContMetric()
-                return false
-              )(@$img))
-      .bind('movestart', => @$img.movin = yes)
-      .bind('moveend', => @$img.movin = no)
-      .bind 'swipeleft', =>
-        @showNext() unless @$img.movable
-      .bind 'swiperight', =>
-        @showPrev() unless @$img.movable
-
-    setTimeout =>
-      @$img.addClass 'current'
-    , 10
-
-    @$el.show().addClass 'show'
-
-    @calcContMetric(@$img)
-    @bodyScroll = $('body').scrollTop() || $('html').scrollTop()
-    abscureList.$el.hide()
-
-  show: (@model, direction = true) ->
-    if !model or !model.attrs.name then return false
-    @$imgCont.removeClass 'loading'
-    @model.deferredShow = no
-    model.load().then =>
-      @$imgCont.removeClass 'loading'
-      return false if @model isnt model or @model.deferredShow
-      abscureList.collection[if direction then 'getNext' else 'getPrev'](@model).load()
-      @__initImg()
-
-    if @model.load().state() isnt 'resolved'
-      $timeout ->
-          if @model is model
-            @$imgCont.addClass 'loading'
-      , 500, this, [model]
-
-      $timeout ->
-        if @model is model
-          return if @model.deferredShow++
-          @__initImg()
-      , 3000, this, [model]
-
-    @$el.show().addClass 'show'
-    abscureList.$el.hide()
-
-  showNext: ->
-    return if @$img.movin
-    @$img and @$img.hide().unbind()
-    @show abscureList.collection.getNext(@model), true
-    # shareToggle false
-    return false
-
-  showPrev: ->
-    return if @$img.movin
-    @$img and @$img.hide().unbind()
-    @show abscureList.collection.getPrev(@model), false
-    # shareToggle false
-    return false
-
-  hide: ->
-    abscureList.$el.show()
-    @$el.hide()
-    @$img and @$img.hide().unbind()
-    @model = null
-    @stop() if @playing
-    shareToggle false
-    (=>
-      setTimeout => 
-        $('body,html').scrollTop(@bodyScroll)
-      , 0
-    )()
-
-  calcContMetric: ->
-    @contHeight = @$imgCont.innerHeight()
-    @contWidth = @$imgCont.innerWidth()
-    @align()
-
-  align: ->
-    if @$img.innerWidth() is 0 || @$img.innerWidth() is 0
-      setTimeout (=> @align()), 10
-    # if @contWidth > @$img.innerWidth()
-    @$img.css('left', @contWidth/2 - @$img.innerWidth()/2)
-    # else
-    #   @$img.css('left', 0)
-    # if @contHeight > @$img.innerHeight()
-    @$img.css('top', @contHeight/2 - @$img.innerHeight()/2)
-    # else
-    #   @$img.css('top', 0)
-
-  setInterval: ->
-    setTimeout =>
-      if @playing
-        @showNext()
-        @setInterval()
-    , @timeout
-
-  stop: ->
-    @playing = false
-    @$el.find('.btn-play span').attr(class: 'icon-play')
-    return false
-
-  play: ->
-    if @playing then return @stop() else @playing = true
-    @$el.find('.btn-play span').attr(class: 'icon-pause')
-    @setInterval()
-    return false
-
-  wait: false
-  timeout: 4000
-  visible: false
-  playing: false
-  sharing: false
-  bodyScroll: 0
+abscureBox = new AbcureBox
 
 fullscreen = (->
   fullscreened = false

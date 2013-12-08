@@ -25,7 +25,7 @@
     text-align: center;
 
     img {
-        @include transition-property(opacity);
+        @include transition-property(opacity, max-width, max-height);
         @include transition-duration(0.3s);
         -moz-user-select: none;
         -khtml-user-select: none;
@@ -55,11 +55,18 @@
 
         &.stage1 {
             max-height: inherit;
+            cursor: n-resize;
+        }
+
+        &.stage1v {
+            max-width: inherit;
+            cursor: n-resize;
         }
 
         &.stage2 {
             max-height: inherit;
             max-width: inherit;
+            cursor: move;
         }
     }
 }
