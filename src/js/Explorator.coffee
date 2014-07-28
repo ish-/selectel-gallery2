@@ -18,11 +18,13 @@ class AbscureExplorator
     @calc()
     @h = new Hammer img
 
+    @h.get('pinch').set({ enable: true });
+    @h.get('rotate').set({ enable: true });
 
     @h.on 'tap', @onTap
-    @h.on 'pan', @onPan
-    @h.on 'rotate', @onRotate
     @h.on 'pinch', @onPinch
+    @h.on 'rotate', @onRotate
+    @h.on 'pan', @onPan
     @h.on 'panstart rotatestart pinchstart', @resetStart
     @h.on 'panend rotateend pinchend pancancel rotatecancel pinchcancel', @resetEnd
 
@@ -49,23 +51,29 @@ class AbscureExplorator
             abscureBox.showPrev()
         else if @panDirection is 2
           abscureBox.hide()
-      else
+      else if @transform.scale is 1
+        @__transform.translate.x = @transform.translate.x
+        @__transform.translate.y = @transform.translate.y
         @align no
       @panDirection = null
-      return @pinched = no if @pinched
-      @__transform.translate.x = @transform.translate.x
-      @__transform.translate.y = @transform.translate.y
+      # return @pinched = no if @pinched
+      # if if @transform.scale is 1
 
+    else if e and e.type in ['pinchend', 'pinchcancel']
+      @__transform.scale = @transform.scale
+
+    @transform.rotate = 0
     @$img.addClass 'animate'
     @requestUpdate()
 
-  onPinch: (ev) ->
-    transform.scale = _scale * ev.scale
-    requestElementUpdate()
+  onPinch: (e) ->
+    @pinched = yes
+    @transform.scale = @__transform.scale * e.scale
+    @requestUpdate()
 
-  onRotate: (ev) ->
-    transform.rotate = ev.rotation
-    requestElementUpdate()
+  onRotate: (e) ->
+    @transform.rotate = e.rotation
+    @requestUpdate()
 
   onPan: (e) ->
     if @transform.scale is 1
