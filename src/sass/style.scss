@@ -192,3 +192,8 @@ body, html {
         z-index: 8;
     }
 }
+
+.animate {
+    @include transition-property(transform, opacity);
+    @include transition-duration(0.2s);
+}

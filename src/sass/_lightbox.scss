@@ -3,7 +3,7 @@
    ========================================================================== */
 .light-box {
     @include transition-property(all);
-    @include transition-duration(1s);
+    @include transition-duration(0.2s);
     @include transition-timing-function(ease-in);
     display: none;
     opacity: 0;
@@ -21,12 +21,13 @@
     right: 0px;
     bottom: 0px;
     height: 100%;
+    width: 100%;
     z-index: 10;
-    text-align: center;
+    // text-align: center;
 
     img {
-        @include transition-property(opacity, max-width, max-height);
-        @include transition-duration(0.3s);
+        // @include transition-property(opacity, max-width, max-height);
+        // @include transition-duration(0.3s);
         -moz-user-select: none;
         -khtml-user-select: none;
         -webkit-user-select: none;
@@ -42,12 +43,12 @@
         user-drag: none;
         cursor:auto;
         opacity: 0;
-        left: 0;
-        top: 0;
+        // left: 0;
+        // top: 0;
         position: absolute;
 
-        max-width: 100%;
-        max-height: 100%;
+        // max-width: 100%;
+        // max-height: 100%;
 
         &.current {
             opacity: 1;

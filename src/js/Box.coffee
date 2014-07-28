@@ -6,25 +6,33 @@ class AbcureBox
     'click .btn-play': 'play'
     
   constructor: ->
+    that = this
     @$el = $('.light-box')
     $(window).on 'resize orientationchange', => 
       @calcContMetric()
     @$btnLoad = @$el.find('.btn-download')
     @$footer = @$el.find('.light-box-footer').on 'mouseenter', -> $(this).removeClass('hidden')
+
+    __swiped = no
     @$imgCont = @$el.find('.light-box-image')
       .on 'transitionend', 'img.slide', (event) ->
         if !$(event.target).hasClass('current')
           $(this).remove()
-      .bind('dragstart', -> false)
-      .bind 'swipeleft', (e) =>
-        @showNext() unless @$img.explorator.movable
-      .bind 'swiperight', =>
-        @showPrev() unless @$img.explorator.movable
-      .bind('swiperight swipeleft', => @$footer.addClass('hidden'))
-      .bind('tap', => @$footer.addClass('hidden'))
-      .bind 'click', (event) -> 
-        if event.target == this
-          _this.hide()
+      .bind 'dragstart', -> 
+        false
+      # .bind 'swipeleft', (e) =>
+      #   @showNext() unless @$img.explorator.movable
+      # .bind 'swiperight', =>
+      #   @showPrev() unless @$img.explorator.movable
+      # .bind 'swiperight swipeleft', (e) => 
+      #   __swiped = yes
+      #   @$footer.addClass('hidden')
+      # .bind 'touchend', => 
+      #   @$footer.addClass('hidden')
+      .bind 'click', (e) -> 
+        return __swiped = no if __swiped
+        if e.target == this
+          that.hide()
 
     $('body').on 'keydown', (event) =>
       if event.keyCode in [39,37,32]
@@ -47,7 +55,7 @@ class AbcureBox
       .find('.current')
       .removeClass('current')
     @$img = new AbscureExplorator @model.img
-    @$img.addClass 'loaded slide'
+    @$img.addClass 'loaded'
     @$imgCont.append @$img.show()
 
     setTimeout =>
@@ -101,9 +109,12 @@ class AbcureBox
 
   hide: ->
     abscureList.$el.show()
-    @$el.hide()
-    @$img and @$img.hide()
-    @model = null
+    @$el.removeClass 'show'
+    setTimeout =>
+      @$el.hide()
+      @$img and @$img.hide()
+      @model = null
+    , 200
     @stop() if @playing
     shareToggle false
     (=>
@@ -113,7 +124,7 @@ class AbcureBox
     )()
 
   calcContMetric: ->
-    @$img?[0].explorator.align h: @$imgCont.innerHeight(), w: @$imgCont.innerWidth()
+    # @$img?[0].explorator.align h: @$imgCont.innerHeight(), w: @$imgCont.innerWidth()
 
   setInterval: ->
     setTimeout =>

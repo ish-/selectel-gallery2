@@ -25,6 +25,12 @@ reqAPI = (fld) ->
     abscureList = new ItemCollectionView models
 
 reqAPI FLD or ''
+########################################################################################
+
+bindAll = (obj) ->
+  funcs = Array.prototype.slice.call arguments, 1
+  funcs.forEach (f) -> obj[f] = obj[f].bind(obj)
+  obj
 
 ########################################################################################
 
@@ -100,7 +106,7 @@ class ImgView
     else
       @thumbImg = new Image
       @thumbImg.src = URL + '.thumbs/' + name
-      @thumbImg.onload = __thumbOnLoad.bind this, @thumbImg.src
+      @thumbImg.onload = @__thumbOnLoad.bind this, @thumbImg.src
       @thumbImg.onerror = loadOriginal.bind this
 
 class ItemCollection extends Array

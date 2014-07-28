@@ -38,20 +38,25 @@ module.exports = function(grunt) {
         files: [
           {'.temp/js/vendor.js': [
             'src/js/vendor/jquery.min.js',
-            'src/js/vendor/jquery.event.move.js',
-            'src/js/vendor/jquery.event.swipe.js',
+            'src/js/vendor/hammer.min.js',
+            // 'src/js/vendor/jquery.event.move.js',
+            // 'src/js/vendor/jquery.event.swipe.js',
             'src/js/vendor/jquery.appear.js',
+            'src/js/vendor/jquery.transitionend.js',
           ]},
         ]
       },
-			'vendor-dev': {
-				files: [
-					{'dist/js/vendor.js': [
-						'src/js/vendor/jquery.min.js',
-						'src/js/vendor/jquery.event.move.js',
-						'src/js/vendor/jquery.event.swipe.js',
-						'src/js/vendor/jquery.appear.js',
-					]},
+      'vendor-dev': {
+        files: [
+          {'dist/js/vendor.js': [
+            'src/js/vendor/jquery.min.js',
+            'src/js/vendor/hammer.min.js',
+            // 'src/js/vendor/jquery.doubletap.js',
+            // 'src/js/vendor/jquery.event.move.js',
+            // 'src/js/vendor/jquery.event.swipe.js',
+            'src/js/vendor/jquery.appear.js',
+            'src/js/vendor/jquery.transitionend.js',
+          ]},
 				]
 			},
 		},
@@ -104,5 +109,6 @@ module.exports = function(grunt) {
 	grunt.registerTask('build:gallery', ['clean', 'coffee:gallery', 'compass', 'concat:vendor', 'uglify:gallery', 'ejs:gallery']);
 	grunt.registerTask('build', ['build:gallery', 'build:access']);
 
-	grunt.registerTask('build:gallery-dev', ['clean', 'coffee:gallery-dev', 'concat:vendor-dev', 'compass', 'ejs:gallery-dev', 'watch:coffee']);
+  grunt.registerTask('build:gallery-dev', ['clean', 'coffee:gallery-dev', 'concat:vendor-dev', 'compass', 'ejs:gallery-dev', 'watch:coffee']);
+	grunt.registerTask('build:gallery-fast-dev', ['coffee:gallery-dev', 'concat:vendor-dev', 'ejs:gallery-dev', 'watch:coffee']);
 }
