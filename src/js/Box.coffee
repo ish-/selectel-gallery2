@@ -1,15 +1,15 @@
 class AbcureBox
-  events:
+  events: ->
     'click .btn-close': 'hide'
-    'click .btn-next': 'showNext'
-    'click .btn-prev': 'showPrev'
+    'click .btn-next': 'showNeighborModel'
+    'click .btn-prev': 'showNeighborModel'
     'click .btn-play': 'play'
     
   constructor: ->
     that = this
     @$el = $('.light-box')
       .on 'mousewheel scroll', (e) -> !e.preventDefault()
-    $(window).on 'resize orientationchange', (debounce (@calcContMetric.bind this), 300) 
+
     @$btnLoad = @$el.find('.btn-download')
     @$footer = @$el.find('.light-box-footer').on 'mouseenter', -> $(this).removeClass('hidden')
 
@@ -48,6 +48,10 @@ class AbcureBox
       w = key.split /\s+/
       @$el.on w[0], w[1], @[fn].bind this
 
+    App.on 'item:show', @show
+    App.on 'item:show:sequence', @showNeighborModel
+      
+
   hideFooter: ->
     @$footer.addClass('hidden')
 
@@ -67,16 +71,16 @@ class AbcureBox
 
     @calcContMetric(@$img)
     @bodyScroll = $('body').scrollTop() || $('html').scrollTop()
-    # abscureList.$el.hide()
 
-  show: (@model, direction = true) ->
+  show: (@model, direction = true) =>
     if !model or !model.attrs.name then return false
     @$imgCont.removeClass 'loading'
     @model.deferredShow = no
     model.load().then =>
       @$imgCont.removeClass 'loading'
       return false if @model isnt model or @model.deferredShow
-      abscureList.collection[if direction then 'getNext' else 'getPrev'](@model).load()
+      # App.trigger 'item:preload:' + (if direction then 'next' else 'prev'), @model
+      # App.list.collection[if direction then 'getNext' else 'getPrev'](@model).load()
       @__initImg()
 
     if @model.load().state() isnt 'resolved'
@@ -93,22 +97,22 @@ class AbcureBox
       # , 3000, this, [model]
 
     @$el.show().addClass 'show'
-    # abscureList.$el.hide()
+  showNeighborModel: (dir) =>
+    App.trigger 'item:show', App.list.collection.getNeighborModel @model, dir
 
-  showNext: ->
-    @$img and @$img.hide().unbind()
-    @show abscureList.collection.getNext(@model), true
-    # shareToggle false
-    return false
+  # showNext: ->
+  #   @$img and @$img.hide().unbind()
+  #   @show App.list.collection.getNeighborModel @model, true
+  #   # shareToggle false
+  #   return false
 
-  showPrev: ->
-    @$img and @$img.hide().unbind()
-    @show abscureList.collection.getPrev(@model), false
-    # shareToggle false
-    return false
+  # showPrev: ->
+  #   @$img and @$img.hide().unbind()
+  #   @show App.list.collection.getNeighborModel @model, false
+  #   # shareToggle false
+  #   return false
 
   hide: ->
-    abscureList.$el.show()
     @$el.removeClass 'show loading'
     setTimeout =>
       @$el.hide()

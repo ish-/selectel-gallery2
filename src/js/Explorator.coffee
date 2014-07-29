@@ -1,5 +1,5 @@
 ticking = no
-touchDevice = ("ontouchstart" in document.documentElement)
+
 reqAnimationFrame = do ->
   window[Hammer.prefixed(window, 'requestAnimationFrame')] or (callback) ->
     window.setTimeout callback, 1000 / 60
@@ -14,7 +14,7 @@ class AbscureExplorator
     @$img.explorator = this
     img.explorator = this
 
-    bindAll this, 'resetEnd', 'onPan', 'requestUpdate', 'align', 'updateTransform', 'resetStart', 'onTap', 'onPinch', 'onRotate'
+    # bindAll this, 'resetEnd', 'onPan', 'requestUpdate', 'align', 'updateTransform', 'resetStart', 'onTap', 'onPinch', 'onRotate'
 
     @calc()
     @h = new Hammer img
@@ -47,11 +47,11 @@ class AbscureExplorator
 
     @updateTransform()
 
-  resetStart: (e) ->
-    abscureBox.hideFooter()
+  resetStart: (e) =>
+    # abscureBox.hideFooter()
     @$img.removeClass 'animate'
 
-  resetEnd: (e) ->
+  resetEnd: (e) =>
     @$img.addClass 'animate'
     if e
       if e.type in ['panend', 'pancancel']
@@ -59,11 +59,13 @@ class AbscureExplorator
           @img.style.opacity = 0
           if @panDirection is 1
             if e.velocityX > 0
-              abscureBox.showNext()
+              App.trigger 'item:show:sequence', yes
+              # abscureBox.showNext()
             else
-              abscureBox.showPrev()
+              App.trigger 'item:show:sequence', no
+              # abscureBox.showPrev()
           else if @panDirection is 2
-            abscureBox.hide()
+            App.box.hide()
         else if !@panned
             @__transform.translate.x = @transform.translate.x = @startX
             @__transform.translate.y = @transform.translate.y = @startY
@@ -83,7 +85,7 @@ class AbscureExplorator
     @transform.rotate = 0
     @requestUpdate()
 
-  onPinch: (e) ->
+  onPinch: (e) =>
     scale = Math.max 1, Math.min 10, @__transform.scale * e.scale
     if scale < 1.2
       @align()
@@ -93,11 +95,11 @@ class AbscureExplorator
       @transform.translate.y = @__transform.translate.y + e.deltaY
     @requestUpdate()
 
-  onRotate: (e) ->
+  onRotate: (e) =>
     @transform.rotate = e.rotation
     @requestUpdate()
 
-  onPan: (e) ->
+  onPan: (e) =>
     return if @pinched
     if @transform.scale is 1 and !@reverse
       if !@panDirection and Math.abs(e.velocity) > .3
@@ -115,7 +117,7 @@ class AbscureExplorator
       @panned = yes
     @requestUpdate()
 
-  onTap: (e) ->
+  onTap: (e) =>
     @transform.scale = 1.2
     @requestUpdate()
 
@@ -127,22 +129,23 @@ class AbscureExplorator
         @requestUpdate();
     , 200
 
-  requestUpdate: ->
+  requestUpdate: =>
     if !ticking
       ticking = yes
       reqAnimationFrame @updateTransform
 
-  updateTransform: do -> 
-    attr = Hammer.prefixed(document.body.style, 'transform')
-    ->
+  @TRANSFORM_ATTR = Hammer.prefixed(document.body.style, 'transform')
+
+  updateTransform: =>
       value = [
-          'translate3d(' + @transform.translate.x + 'px, ' + @transform.translate.y + 'px, 0)',
+        'translate3d(' + @transform.translate.x + 'px, ' + @transform.translate.y + 'px, 0)',
         'scale(' + (@transform.scale || 1) + ', ' + (@transform.scale || 1) + ')',
-        'rotate(' + @transform.rotate + 'deg)'];
-      @img.style[attr] = value.join ''
+        'rotate(' + @transform.rotate + 'deg)'
+      ]
+      @img.style[AbscureExplorator.TRANSFORM_ATTR] = value.join ''
       ticking = no
 
-  align: (reverse) -> 
+  align: (reverse) => 
     @panned = no
     @img.style.opacity = 1
     @reverse = reverse if reverse?

@@ -1,31 +1,3 @@
-abscureList = null
-PATH = ''
-
-reqAPI = (fld) ->
-  PATH = HOST + fld
-  return $.ajax(
-    url: HOST + fld + "?format=json"
-    beforeSend: (xhr) ->
-      xhr.setRequestHeader('X-Web-Mode', 'listing')
-  ).done (files, err) ->
-    models = files.filter (file) ->
-      if (/^\./).test file.subdir
-        return false
-      if file.subdir
-        return true
-      if file.content_type
-        return file.content_type.split('/')[0] is 'image'
-      return false
-
-    pathArr = document.location.pathname.split('/').filter (el) -> 
-      el
-    if pathArr.length > 1
-      models.unshift({subdir: '../'})
-
-    abscureList = new ItemCollectionView models
-
-reqAPI FLD or ''
-########################################################################################
 
 bindAll = (obj) ->
   funcs = Array.prototype.slice.call arguments, 1
@@ -35,6 +7,33 @@ bindAll = (obj) ->
 `function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}`
 
 ########################################################################################
+
+abscureList = null
+log = console.log.bind console
+
+class Abscure
+  constructor: ->
+    for name, method of Events
+      this[name] = method.bind @ee if typeof method is 'function'
+
+    @on 'all', log
+  initialize: ->
+    @list = new ItemCollectionView()
+    @box = new AbcureBox()
+
+
+    $(document.body)
+      .on 'click', '.btn-share', shareToggle.bind @box
+      .on 'click', '.btn-fullscreen', fullscreen
+      .on 'appear click', '#lazy', @list.needMore
+      .on 'click', '.goup', -> $('body,html').scrollTop 0
+
+    $(window)
+      .on 'resize orientationchange', (debounce (@box.calcContMetric), 300) 
+
+
+########################################################################################
+
 
 imgTpl = '<div class="photo loading"><div class="title"></div></div>'
 fldTpl = '<div class="folder"><a href="" class="title"></a></div>'
@@ -67,18 +66,23 @@ class FldView
     subdir: -> 
       title = this.find('.title')[0]
       (subdir) -> 
-        title.innerText = subdir
+        title.innerHtml = subdir
         title.href = subdir.slice 0, -1
+  remove: ->
+    @$el.remove()
 
 class ItemModel
   constructor: (@attrs) ->
+
+  url: ->
+    @collection.url()
 
   load: ->
     if !@__loadPromise
       dfd = new $.Deferred
       @__loadPromise = dfd.promise()
       @img = new Image
-      @img.src = PATH + @attrs.name
+      @img.src = @url() + @attrs.name
       @img.onload = dfd.resolve.bind dfd, @img.src
       @img.onerror = dfd.reject
     return @__loadPromise
@@ -95,44 +99,94 @@ class ImgView
   template: new Tpl imgTpl, 
     name: -> 
       title = this.find('.title')[0]
-      (name) -> title.innerText = name
+      (name) -> title.innerHtml = name
 
   constructor: (@model) ->
     # @model = new ItemModel model
     name = @model.attrs.name
     @$el = @template.clone {name}
-    @$el[0].onclick = abscureBox.show.bind abscureBox, @model
+    @$el.on 'click', => 
+      App.trigger 'item:show', @model
+    # abscureBox.show.bind abscureBox, @model
 
     if THUMBS_OFF
       @__loadOriginal()
     else
       @thumbImg = new Image
-      @thumbImg.src = HOST + FLD + '.thumbs/' + name
+      @thumbImg.src = @model.url() + '.thumbs/' + name
       @thumbImg.onload = @__thumbOnLoad.bind this, @thumbImg.src
       @thumbImg.onerror = @__loadOriginal.bind this
+
+  remove: ->
+    @$el.off()
+    @$el.remove()
 
 class ItemCollection extends Array
   Model: ItemModel
   constructor: (models) ->
-    @push.apply this, models.map (m) => new @Model m
+    @page = 0
+    @fetch()
+
+    App.on 'item:show', =>
+      @getNeighborModel.apply this, arguments
+        .load()
+
+  reset: (models) ->
+    @push.apply this, models.map (m, i) => 
+      model = new @Model m
+      model.collection = this
+      model._index = i
+      return model
+    App.trigger 'collection:reset', this
 
   getNextPage: ->
     first = @page * @__itemsPerPage
     @page++
     @slice(first, first + @__itemsPerPage)
 
-  page: 0
+  url: ->
+    HOST + FLD
+  fetch: ->
+    return $.ajax(
+      url: @url() + "?format=json"
+      beforeSend: (xhr) ->
+        xhr.setRequestHeader('X-Web-Mode', 'listing')
+    ).done (files, err) =>
+      models = files.filter (file) ->
+        if (/^\./).test file.subdir
+          return false
+        if file.subdir
+          return true
+        if file.content_type
+          return file.content_type.split('/')[0] is 'image'
+        return false
+
+      pathArr = document.location.pathname.split('/').filter (el) -> 
+        el
+      if pathArr.length > 1
+        models.unshift({subdir: '../'})
+
+      @reset models
+
   __itemsPerPage: (->
     ratio = Math.floor($(window).width() / 312) 
     # if ratio > 2 then ratio else 3 )() * 4
     return ratio )() * 4
 
-  getNext: (model) ->
-    return @[@indexOf(model) + 1] || (@filter (model) -> model.attrs.name)[0]
+  getNeighborModel: (model, dir = yes) =>
+    model = @lastModel unless model?
+    if dir
+      return @lastModel = @[model._index + 1] or (@filter (model) -> model.attrs.name)[0]
+    else
+      prevModel = @[model._index - 1]
+      return @lastModel = if (!prevModel or !prevModel.attrs.name) then @[@length - 1] else prevModel
 
-  getPrev: (model) ->
-    prevModel = @[@indexOf(model) - 1]
-    return if (!prevModel or !prevModel.attrs.name) then @[@length - 1] else prevModel
+  # getNext: (model) ->
+  #   return @[@indexOf(model) + 1] || (@filter (model) -> model.attrs.name)[0]
+
+  # getPrev: (model) ->
+  #   prevModel = @[@indexOf(model) - 1]
+  #   return if (!prevModel or !prevModel.attrs.name) then @[@length - 1] else prevModel
 
 class ItemCollectionView
   $el: $('.photo-list')
@@ -140,27 +194,32 @@ class ItemCollectionView
     page: -> 
       title = this.find('.tit')[0]
       (page) -> 
-        title.innerText = page + 1
+        title.innerHtml = page + 1
         title.id = page + 1
 
   constructor: (models) ->
-    @collection = new ItemCollection models
-    @renderCount()
+    @children = []
+    @collection = new ItemCollection()
+    
+    App.on 'collection:reset', @render
 
+  render: =>
+    @collection.page = 0
+    @empty()
+    @renderCount()
     $('#lazy').appear().show()
 
     for i in [0..(Math.floor($(window).height()/312))]
       @needMore()
 
-    $(document.body)
-      .on('appear click', '#lazy', @needMore.bind this)
-      .on('click', '.goup', -> $('body,html').scrollTop 0)
+    
 
   appendChild: (model) ->
     view = if model.attrs.subdir then new FldView(model) else new ImgView(model)
+    @children.push view
     @$el.append(view.$el)
 
-  needMore: ->
+  needMore: =>
     page = @collection.page
     if (arr = @collection.getNextPage()).length
       if page
@@ -169,7 +228,7 @@ class ItemCollectionView
       return @needMore
     $('#lazy').remove()
 
-  renderCount: () ->
+  renderCount: =>
     lastDigit = @collection.length%10;
     twoLastDigits = @collection.length%100;
     $('.count').html(@collection.length + ' элемент' + (
@@ -177,7 +236,13 @@ class ItemCollectionView
           if twoLastDigits not in [12,13,14] and lastDigit in [2,3,4] then 'а' else 'ов'
       ))
 
-abscureBox = new AbcureBox
+  empty: ->
+    $('#lazy').hide()
+    @children.forEach (child) ->
+      child.remove()
+    @$el.find '.linebreak'
+      .remove()
+
 
 fullscreen = (->
   fullscreened = false
@@ -214,6 +279,6 @@ shareToggle = (->
     return false
 )()
 
-$('.btn-share').on 'click', shareToggle.bind abscureBox
-$('.btn-fullscreen').on 'click', fullscreen
-
+$ ->
+  (window.App = new Abscure)
+    .initialize()

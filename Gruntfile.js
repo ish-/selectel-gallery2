@@ -38,6 +38,7 @@ module.exports = function(grunt) {
         files: [
           {'.temp/js/vendor.js': [
             'src/js/vendor/jquery.min.js',
+            'src/js/vendor/events.js',
             'src/js/vendor/hammer.min.js',
             // 'src/js/vendor/jquery.event.move.js',
             // 'src/js/vendor/jquery.event.swipe.js',
@@ -51,6 +52,7 @@ module.exports = function(grunt) {
           {'dist/js/vendor.js': [
             'src/js/vendor/jquery.min.js',
             'src/js/vendor/hammer.min.js',
+            'src/js/vendor/events.js',
             // 'src/js/vendor/jquery.doubletap.js',
             // 'src/js/vendor/jquery.event.move.js',
             // 'src/js/vendor/jquery.event.swipe.js',
