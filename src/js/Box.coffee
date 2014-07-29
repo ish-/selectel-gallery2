@@ -8,16 +8,15 @@ class AbcureBox
   constructor: ->
     that = this
     @$el = $('.light-box')
-    $(window).on 'resize orientationchange', => 
-      @calcContMetric()
+      .on 'mousewheel scroll', (e) -> !e.preventDefault()
+    $(window).on 'resize orientationchange', (debounce (@calcContMetric.bind this), 300) 
     @$btnLoad = @$el.find('.btn-download')
     @$footer = @$el.find('.light-box-footer').on 'mouseenter', -> $(this).removeClass('hidden')
 
-    __swiped = no
     @$imgCont = @$el.find('.light-box-image')
-      .on 'transitionend', 'img.slide', (event) ->
-        if !$(event.target).hasClass('current')
-          $(this).remove()
+      # .on 'transitionend', 'img.slide', (event) ->
+      #   if !$(event.target).hasClass('current')
+      #     $(this).remove()
       .bind 'dragstart', -> 
         false
       # .bind 'swipeleft', (e) =>
@@ -30,43 +29,45 @@ class AbcureBox
       # .bind 'touchend', => 
       #   @$footer.addClass('hidden')
       .bind 'click', (e) -> 
-        return __swiped = no if __swiped
         if e.target == this
+          if that.$img[0].explorator.transform.scale isnt 1
+            return that.$img[0].explorator.onTap()
           that.hide()
 
     $('body').on 'keydown', (event) =>
       if event.keyCode in [39,37,32]
-        @$footer.addClass('hidden')
+        @hideFooter()
       switch event.keyCode
         when 39 then @showNext()
         when 37 then @showPrev()
         when 32 then @showNext()
         when 27 then @hide()
-        when 13 then @fullscreen(event) if event.altKey
-
-    $('.btn-fullscreen').click fullscreen
+        when 13 then fullscreen() if event.altKey
 
     for key, fn of @events
       w = key.split /\s+/
       @$el.on w[0], w[1], @[fn].bind this
+
+  hideFooter: ->
+    @$footer.addClass('hidden')
 
   __initImg: ->
     @$imgCont
       .find('.current')
       .removeClass('current')
     @$img = new AbscureExplorator @model.img
-    @$img.addClass 'loaded'
     @$imgCont.append @$img.show()
 
+    @$el.show().addClass 'show'
     setTimeout =>
+      @$img.addClass 'loaded'
       @$img.addClass 'current'
     , 10
 
-    @$el.show().addClass 'show'
 
     @calcContMetric(@$img)
     @bodyScroll = $('body').scrollTop() || $('html').scrollTop()
-    abscureList.$el.hide()
+    # abscureList.$el.hide()
 
   show: (@model, direction = true) ->
     if !model or !model.attrs.name then return false
@@ -84,24 +85,23 @@ class AbcureBox
             @$imgCont.addClass 'loading'
       , 500, this, [model]
 
-      $timeout ->
-        if @model is model
-          return if @model.deferredShow++
-          @__initImg()
-      , 3000, this, [model]
+      # $timeout ->
+      #   if @model is model
+      #     return if @model.deferredShow++
+      #     @$imgCont.removeClass 'loading'
+      #     @__initImg()
+      # , 3000, this, [model]
 
     @$el.show().addClass 'show'
-    abscureList.$el.hide()
+    # abscureList.$el.hide()
 
   showNext: ->
-    return if @$img.movin
     @$img and @$img.hide().unbind()
     @show abscureList.collection.getNext(@model), true
     # shareToggle false
     return false
 
   showPrev: ->
-    return if @$img.movin
     @$img and @$img.hide().unbind()
     @show abscureList.collection.getPrev(@model), false
     # shareToggle false
@@ -109,7 +109,7 @@ class AbcureBox
 
   hide: ->
     abscureList.$el.show()
-    @$el.removeClass 'show'
+    @$el.removeClass 'show loading'
     setTimeout =>
       @$el.hide()
       @$img and @$img.hide()
@@ -123,15 +123,19 @@ class AbcureBox
       , 0
     )()
 
-  calcContMetric: ->
-    # @$img?[0].explorator.align h: @$imgCont.innerHeight(), w: @$imgCont.innerWidth()
+  calcContMetric: =>
+    @$img?[0].explorator.calc()
 
   setInterval: ->
-    setTimeout =>
-      if @playing
-        @showNext()
-        @setInterval()
-    , @timeout
+    model = @model
+    model.load().then =>
+      setTimeout =>
+        if @model isnt model
+          return @setInterval()
+        if @playing
+          @showNext()
+          @setInterval()
+      , @timeout
 
   stop: ->
     @playing = false

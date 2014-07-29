@@ -7,6 +7,7 @@
     @include transition-timing-function(ease-in);
     display: none;
     opacity: 0;
+    touch-action: none;
 }
 
 .show {
@@ -26,8 +27,9 @@
     // text-align: center;
 
     img {
-        // @include transition-property(opacity, max-width, max-height);
+        // @include transition-property(opacity);
         // @include transition-duration(0.3s);
+        @include box-shadow(0 0 15px 5px black);
         -moz-user-select: none;
         -khtml-user-select: none;
         -webkit-user-select: none;

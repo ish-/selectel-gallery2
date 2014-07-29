@@ -32,6 +32,8 @@ bindAll = (obj) ->
   funcs.forEach (f) -> obj[f] = obj[f].bind(obj)
   obj
 
+`function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}`
+
 ########################################################################################
 
 imgTpl = '<div class="photo loading"><div class="title"></div></div>'
@@ -105,9 +107,9 @@ class ImgView
       @__loadOriginal()
     else
       @thumbImg = new Image
-      @thumbImg.src = URL + '.thumbs/' + name
+      @thumbImg.src = HOST + FLD + '.thumbs/' + name
       @thumbImg.onload = @__thumbOnLoad.bind this, @thumbImg.src
-      @thumbImg.onerror = loadOriginal.bind this
+      @thumbImg.onerror = @__loadOriginal.bind this
 
 class ItemCollection extends Array
   Model: ItemModel
@@ -212,5 +214,6 @@ shareToggle = (->
     return false
 )()
 
-$('.btn-share').click shareToggle.bind abscureBox
+$('.btn-share').on 'click', shareToggle.bind abscureBox
+$('.btn-fullscreen').on 'click', fullscreen
 

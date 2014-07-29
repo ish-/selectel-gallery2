@@ -1,4 +1,5 @@
 ticking = no
+touchDevice = ("ontouchstart" in document.documentElement)
 reqAnimationFrame = do ->
   window[Hammer.prefixed(window, 'requestAnimationFrame')] or (callback) ->
     window.setTimeout callback, 1000 / 60
@@ -22,12 +23,20 @@ class AbscureExplorator
     @h.get('rotate').set({ enable: true });
 
     @h.on 'tap', @onTap
+    @h.on 'pan', @onPan
     @h.on 'pinch', @onPinch
     @h.on 'rotate', @onRotate
-    @h.on 'pan', @onPan
     @h.on 'panstart rotatestart pinchstart', @resetStart
     @h.on 'panend rotateend pinchend pancancel rotatecancel pinchcancel', @resetEnd
 
+    # @$img.on 'mousewheel', (e) =>
+    #   y = e.originalEvent.deltaY
+    #   scale = Math.max 1, Math.min 10, @__transform.scale + y / 100
+    #   if scale < 1.2
+    #     @align()
+    #   else
+    #     @transform.scale = scale
+    #   @updateTransform()
 
     @$img.addClass 'animate'
     return @$img
@@ -39,36 +48,49 @@ class AbscureExplorator
     @updateTransform()
 
   resetStart: (e) ->
+    abscureBox.hideFooter()
     @$img.removeClass 'animate'
 
   resetEnd: (e) ->
-    if e and e.type in ['panend', 'pancancel']
-      if Math.abs(e.velocity) > 0.82
-        if @panDirection is 1
-          if e.velocityX > 0
-            abscureBox.showNext()
-          else
-            abscureBox.showPrev()
-        else if @panDirection is 2
-          abscureBox.hide()
-      else if @transform.scale is 1
-        @__transform.translate.x = @transform.translate.x
-        @__transform.translate.y = @transform.translate.y
-        @align no
-      @panDirection = null
-      # return @pinched = no if @pinched
-      # if if @transform.scale is 1
+    @$img.addClass 'animate'
+    if e
+      if e.type in ['panend', 'pancancel']
+        if @panDirection and Math.abs(e.velocity) > 0.82
+          @img.style.opacity = 0
+          if @panDirection is 1
+            if e.velocityX > 0
+              abscureBox.showNext()
+            else
+              abscureBox.showPrev()
+          else if @panDirection is 2
+            abscureBox.hide()
+        else if !@panned
+            @__transform.translate.x = @transform.translate.x = @startX
+            @__transform.translate.y = @transform.translate.y = @startY
+            @img.style.opacity = 1
+        else
+          @__transform.translate.x = @transform.translate.x
+          @__transform.translate.y = @transform.translate.y
+          # @align no
+        @panDirection = null
+        return @pinched = no if @pinched
 
-    else if e and e.type in ['pinchend', 'pinchcancel']
-      @__transform.scale = @transform.scale
+      else if e.type in ['pinchend', 'pinchcancel']
+        # return @pinched = no if @pinched
+        @pinched = yes
+        @__transform.scale = @transform.scale
 
     @transform.rotate = 0
-    @$img.addClass 'animate'
     @requestUpdate()
 
   onPinch: (e) ->
-    @pinched = yes
-    @transform.scale = @__transform.scale * e.scale
+    scale = Math.max 1, Math.min 10, @__transform.scale * e.scale
+    if scale < 1.2
+      @align()
+    else
+      @transform.scale = scale
+      @transform.translate.x = @__transform.translate.x + e.deltaX
+      @transform.translate.y = @__transform.translate.y + e.deltaY
     @requestUpdate()
 
   onRotate: (e) ->
@@ -76,17 +98,21 @@ class AbscureExplorator
     @requestUpdate()
 
   onPan: (e) ->
-    if @transform.scale is 1
-      if @panDirection or Math.abs(e.velocity) > .3
+    return if @pinched
+    if @transform.scale is 1 and !@reverse
+      if !@panDirection and Math.abs(e.velocity) > .3
         @panDirection = if Math.abs(e.velocityX) > Math.abs(e.velocityY) then 1 else 2
 
       if @panDirection is 1
         @transform.translate.x = @__transform.translate.x + e.deltaX
+        @img.style.opacity = window.innerWidth / Math.abs(e.deltaX) / 10
       else if @panDirection is 2
         @transform.translate.y = @__transform.translate.y + e.deltaY
+        @img.style.opacity = window.innerHeight / Math.abs(e.deltaY) / 10
     else
       @transform.translate.x = @__transform.translate.x + e.deltaX
       @transform.translate.y = @__transform.translate.y + e.deltaY
+      @panned = yes
     @requestUpdate()
 
   onTap: (e) ->
@@ -97,7 +123,7 @@ class AbscureExplorator
         # @transform.scale = @__transform.scale = 1;
         # @transform.translate.x = @__transform.translate.x = @startX;
         # @transform.translate.y = @__transform.translate.y = @startY;
-        @align !@reverse
+        @align !@reverse and !@panned
         @requestUpdate();
     , 200
 
@@ -117,6 +143,8 @@ class AbscureExplorator
       ticking = no
 
   align: (reverse) -> 
+    @panned = no
+    @img.style.opacity = 1
     @reverse = reverse if reverse?
     windowHeight = window.innerHeight
     windowWidth = window.innerWidth
