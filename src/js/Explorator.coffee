@@ -7,14 +7,16 @@ reqAnimationFrame = do ->
 class AbscureExplorator
   constructor: (img) ->
     if img.explorator
-      @calc.call img.explorator
-      return img.explorator.$img 
+      img.explorator.calc()
+      return img.explorator
     @$img = $(img)
     @img = img
-    @$img.explorator = this
     img.explorator = this
 
-    # bindAll this, 'resetEnd', 'onPan', 'requestUpdate', 'align', 'updateTransform', 'resetStart', 'onTap', 'onPinch', 'onRotate'
+    bindAll this, 'resetEnd', 'onPan', 'requestUpdate', 'align', 'updateTransform', 'resetStart', 'onTap', 'onPinch', 'onRotate'
+
+    @originalWidth = @img.width
+    @originalHeight = @img.height
 
     @calc()
     @h = new Hammer img
@@ -39,19 +41,19 @@ class AbscureExplorator
     #   @updateTransform()
 
     @$img.addClass 'animate'
-    return @$img
+    this
 
   calc: ->
-    @ratio = (@originalWidth = @img.width) / (@originalHeight = @img.height);
+    @ratio = @originalWidth / @originalHeight
     @align()
 
     @updateTransform()
 
-  resetStart: (e) =>
+  resetStart: (e) ->
     # abscureBox.hideFooter()
     @$img.removeClass 'animate'
 
-  resetEnd: (e) =>
+  resetEnd: (e) ->
     @$img.addClass 'animate'
     if e
       if e.type in ['panend', 'pancancel']
@@ -74,6 +76,7 @@ class AbscureExplorator
           @__transform.translate.x = @transform.translate.x
           @__transform.translate.y = @transform.translate.y
           # @align no
+        @transform.scale = @__transform.scale
         @panDirection = null
         return @pinched = no if @pinched
 
@@ -85,7 +88,7 @@ class AbscureExplorator
     @transform.rotate = 0
     @requestUpdate()
 
-  onPinch: (e) =>
+  onPinch: (e) ->
     scale = Math.max 1, Math.min 10, @__transform.scale * e.scale
     if scale < 1.2
       @align()
@@ -95,13 +98,13 @@ class AbscureExplorator
       @transform.translate.y = @__transform.translate.y + e.deltaY
     @requestUpdate()
 
-  onRotate: (e) =>
+  onRotate: (e) ->
     @transform.rotate = e.rotation
     @requestUpdate()
 
-  onPan: (e) =>
+  onPan: (e) ->
     return if @pinched
-    if @transform.scale is 1 and !@reverse
+    if @__transform.scale is 1 and !@reverse
       if !@panDirection and Math.abs(e.velocity) > .3
         @panDirection = if Math.abs(e.velocityX) > Math.abs(e.velocityY) then 1 else 2
 
@@ -111,13 +114,14 @@ class AbscureExplorator
       else if @panDirection is 2
         @transform.translate.y = @__transform.translate.y + e.deltaY
         @img.style.opacity = window.innerHeight / Math.abs(e.deltaY) / 10
+      @transform.scale = @__transform.scale - (e.distance / window.innerWidth)
     else
       @transform.translate.x = @__transform.translate.x + e.deltaX
       @transform.translate.y = @__transform.translate.y + e.deltaY
       @panned = yes
     @requestUpdate()
 
-  onTap: (e) =>
+  onTap: (e) ->
     @transform.scale = 1.2
     @requestUpdate()
 
@@ -129,14 +133,14 @@ class AbscureExplorator
         @requestUpdate();
     , 200
 
-  requestUpdate: =>
+  requestUpdate: ->
     if !ticking
       ticking = yes
       reqAnimationFrame @updateTransform
 
   @TRANSFORM_ATTR = Hammer.prefixed(document.body.style, 'transform')
 
-  updateTransform: =>
+  updateTransform: ->
       value = [
         'translate3d(' + @transform.translate.x + 'px, ' + @transform.translate.y + 'px, 0)',
         'scale(' + (@transform.scale || 1) + ', ' + (@transform.scale || 1) + ')',
@@ -145,7 +149,7 @@ class AbscureExplorator
       @img.style[AbscureExplorator.TRANSFORM_ATTR] = value.join ''
       ticking = no
 
-  align: (reverse) => 
+  align: (reverse) -> 
     @panned = no
     @img.style.opacity = 1
     @reverse = reverse if reverse?

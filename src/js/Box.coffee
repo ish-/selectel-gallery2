@@ -1,8 +1,8 @@
 class AbcureBox
-  events: ->
+  events:
     'click .btn-close': 'hide'
-    'click .btn-next': 'showNeighborModel'
-    'click .btn-prev': 'showNeighborModel'
+    'click .btn-next': 'showNext'
+    'click .btn-prev': 'showPrev'
     'click .btn-play': 'play'
     
   constructor: ->
@@ -30,9 +30,8 @@ class AbcureBox
       #   @$footer.addClass('hidden')
       .bind 'click', (e) -> 
         if e.target == this
-          if that.$img[0].explorator.transform.scale isnt 1
-            return that.$img[0].explorator.onTap()
-          that.hide()
+          if that.explorator.transform.scale isnt 1
+            that.explorator.onTap()
 
     $('body').on 'keydown', (event) =>
       if event.keyCode in [39,37,32]
@@ -59,7 +58,8 @@ class AbcureBox
     @$imgCont
       .find('.current')
       .removeClass('current')
-    @$img = new AbscureExplorator @model.img
+    @explorator = new AbscureExplorator @model.img
+    @$img = @explorator.$img
     @$imgCont.append @$img.show()
 
     @$el.show().addClass 'show'
@@ -81,10 +81,14 @@ class AbcureBox
       return false if @model isnt model or @model.deferredShow
       # App.trigger 'item:preload:' + (if direction then 'next' else 'prev'), @model
       # App.list.collection[if direction then 'getNext' else 'getPrev'](@model).load()
+      $timeout ($img) ->
+        $img?.hide()
+      , 200, null, [@$img]
+
       @__initImg()
 
     if @model.load().state() isnt 'resolved'
-      $timeout ->
+      $timeout (model) ->
           if @model is model
             @$imgCont.addClass 'loading'
       , 500, this, [model]
@@ -100,7 +104,8 @@ class AbcureBox
   showNeighborModel: (dir) =>
     App.trigger 'item:show', App.list.collection.getNeighborModel @model, dir
 
-  # showNext: ->
+  showNext: -> @showNeighborModel yes
+  showPrev: -> @showNeighborModel no
   #   @$img and @$img.hide().unbind()
   #   @show App.list.collection.getNeighborModel @model, true
   #   # shareToggle false
@@ -121,14 +126,12 @@ class AbcureBox
     , 200
     @stop() if @playing
     shareToggle false
-    (=>
-      setTimeout => 
-        $('body,html').scrollTop(@bodyScroll)
-      , 0
-    )()
+    setTimeout => 
+      $('body,html').scrollTop(@bodyScroll)
+    , 0
 
   calcContMetric: =>
-    @$img?[0].explorator.calc()
+    @explorator.calc()
 
   setInterval: ->
     model = @model

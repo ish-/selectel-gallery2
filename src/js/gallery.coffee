@@ -247,8 +247,8 @@ class ItemCollectionView
 fullscreen = (->
   fullscreened = false
   return ->
-    if fullscreened = fullscreened
-      el = document.body
+    if fullscreened = !fullscreened
+      el = document.documentElement
       fullscreenMethod = el.requestFullScreen || el.webkitRequestFullScreen || el.mozRequestFullScreen || el.msRequestFullScreen
     else 
       el = document
