@@ -11,9 +11,12 @@ class AbcureBox
       .on 'mousewheel scroll', (e) -> !e.preventDefault()
 
     @$btnLoad = @$el.find('.btn-download')
-    @$footer = @$el.find('.light-box-footer').on 'mouseenter', -> $(this).removeClass('hidden')
+    @$footer = @$el.find('.light-box-footer')
+      .on 'mouseenter', -> $(this).removeClass('hidden')
 
     @$imgCont = @$el.find('.light-box-image')
+      .on 'touchstart', (e) ->
+        e.preventDefault()
       # .on 'transitionend', 'img.slide', (event) ->
       #   if !$(event.target).hasClass('current')
       #     $(this).remove()
@@ -55,9 +58,6 @@ class AbcureBox
     @$footer.addClass('hidden')
 
   __initImg: ->
-    @$imgCont
-      .find('.current')
-      .removeClass('current')
     @explorator = new AbscureExplorator @model.img
     @$img = @explorator.$img
     @$imgCont.append @$img.show()
@@ -74,7 +74,10 @@ class AbcureBox
 
   show: (@model, direction = true) =>
     if !model or !model.attrs.name then return false
-    @$imgCont.removeClass 'loading'
+    @$imgCont
+      .removeClass 'loading'
+      .find '.current'
+      .removeClass 'current'
     @model.deferredShow = no
     model.load().then =>
       @$imgCont.removeClass 'loading'
@@ -82,8 +85,9 @@ class AbcureBox
       # App.trigger 'item:preload:' + (if direction then 'next' else 'prev'), @model
       # App.list.collection[if direction then 'getNext' else 'getPrev'](@model).load()
       $timeout ($img) ->
-        $img?.hide()
-      , 200, null, [@$img]
+        if @$img isnt $img
+          $img?.hide()
+      , 200, this, [@$img]
 
       @__initImg()
 
@@ -129,6 +133,7 @@ class AbcureBox
     setTimeout => 
       $('body,html').scrollTop(@bodyScroll)
     , 0
+    @$footer.removeClass 'hidden'
 
   calcContMetric: =>
     @explorator.calc()

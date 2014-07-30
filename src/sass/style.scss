@@ -191,8 +191,8 @@ body, html {
     }
 }
 
-.animate {
+.light-box-image img.animate {
     @include transition-timing-function(cubic-bezier(0.365, 1.650, 0.575, 0.865));
-    @include transition-property(transform, opacity, width, height);
+    @include transition-property(all);
     @include transition-duration(0.2s);
 }

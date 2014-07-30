@@ -32,6 +32,11 @@ class AbscureExplorator
     @h.on 'panend rotateend pinchend pancancel rotatecancel pinchcancel', @resetEnd
 
     # @$img.on 'mousewheel', (e) =>
+    #     delta = if e.originalEvent.deltaY < 0 then 1 else -1
+    #     @transform.scale = @__transform.scale = Math.max 1, Math.min 10, (@__transform.scale * 0.02 * delta)
+    #     @updateTransform()
+
+    # @$img.on 'mousewheel', (e) =>
     #   y = e.originalEvent.deltaY
     #   scale = Math.max 1, Math.min 10, @__transform.scale + y / 100
     #   if scale < 1.2
@@ -50,7 +55,7 @@ class AbscureExplorator
     @updateTransform()
 
   resetStart: (e) ->
-    # abscureBox.hideFooter()
+    App.box.hideFooter()
     @$img.removeClass 'animate'
 
   resetEnd: (e) ->
@@ -109,12 +114,13 @@ class AbscureExplorator
         @panDirection = if Math.abs(e.velocityX) > Math.abs(e.velocityY) then 1 else 2
 
       if @panDirection is 1
+        @transform.scale = @__transform.scale - (e.distance / window.innerWidth) * 1.2
         @transform.translate.x = @__transform.translate.x + e.deltaX
         @img.style.opacity = window.innerWidth / Math.abs(e.deltaX) / 10
       else if @panDirection is 2
+        @transform.scale = @__transform.scale - (e.distance / window.innerHeight) * 1.2
         @transform.translate.y = @__transform.translate.y + e.deltaY
         @img.style.opacity = window.innerHeight / Math.abs(e.deltaY) / 10
-      @transform.scale = @__transform.scale - (e.distance / window.innerWidth)
     else
       @transform.translate.x = @__transform.translate.x + e.deltaX
       @transform.translate.y = @__transform.translate.y + e.deltaY
@@ -151,14 +157,17 @@ class AbscureExplorator
 
   align: (reverse) -> 
     @panned = no
-    @img.style.opacity = 1
+    @img.style.opacity = null
     @reverse = reverse if reverse?
     windowHeight = window.innerHeight
     windowWidth = window.innerWidth
     windowR = windowWidth / windowHeight
     imageHeight = 0
     imageWidth = 0
-    if (d = @ratio > 1 and windowR < 1) or (@reverse and !d)
+
+    alignBy = @ratio > 1 and windowR <= 1
+    if (if @reverse then !alignBy else alignBy)
+    # if (d = @ratio > 1 and windowR < 1) or (@reverse and !d)
       @$img.css
         width: imageWidth = windowWidth
         height: imageHeight = windowWidth / @ratio
