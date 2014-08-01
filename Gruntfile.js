@@ -43,13 +43,13 @@ module.exports = function(grunt) {
             // 'src/js/vendor/jquery.event.move.js',
             // 'src/js/vendor/jquery.event.swipe.js',
             'src/js/vendor/jquery.appear.js',
-            'src/js/vendor/jquery.transitionend.js',
+            // 'src/js/vendor/jquery.transitionend.js',
           ]},
         ]
       },
       'vendor-dev': {
         files: [
-          {'dist/js/vendor.js': [
+          {'dist/vendor.js': [
             'src/js/vendor/jquery.min.js',
             'src/js/vendor/hammer.min.js',
             'src/js/vendor/events.js',
@@ -57,7 +57,7 @@ module.exports = function(grunt) {
             // 'src/js/vendor/jquery.event.move.js',
             // 'src/js/vendor/jquery.event.swipe.js',
             'src/js/vendor/jquery.appear.js',
-            'src/js/vendor/jquery.transitionend.js',
+            // 'src/js/vendor/jquery.transitionend.js',
           ]},
 				]
 			},
@@ -70,16 +70,17 @@ module.exports = function(grunt) {
 		},
 		coffee: {
       options: {
-					bare: true,
+					bare: false,
+          join: true,
       },
       gallery: {
         files: {
-          '.temp/js/gallery.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
+          '.temp/gallery.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
         }
       },
       'gallery-dev': {
 				files: {
-					'dist/js/app.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
+					'dist/app.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
 				}
 			},
 			access: {

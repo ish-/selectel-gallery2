@@ -6,23 +6,46 @@ bindAll = (obj) ->
 
 `function debounce(a,b,c){var d;return function(){var e=this,f=arguments;clearTimeout(d),d=setTimeout(function(){d=null,c||a.apply(e,f)},b),c&&!d&&a.apply(e,f)}}`
 
-########################################################################################
-
-abscureList = null
 log = console.log.bind console
 
+########################################################################################
+
 class Abscure
+  # @HASH_PREFIX = '!/'
   constructor: ->
     for name, method of Events
       this[name] = method.bind @ee if typeof method is 'function'
 
     @on 'all', log
   initialize: ->
+    document.body.addEventListener 'click', (e) ->
+      el = e.target
+      if el.tagName is 'A' and (href = el.getAttribute 'href')[0] = '#'
+        if !(e.metaKey or e.altKey or e.ctrlKey or e.shiftKey)
+          e.preventDefault()
+        else
+          e.stopImmediatePropagation()
+        return false
+    , true
+
+
     @list = new ItemCollectionView()
     @box = new AbcureBox()
 
+    if hash = (window.location.hash.match /^[#!\/]*([\w\W]*)$/)?[1]
+      model = new ItemModel name: hash
+      @trigger 'item:show', model
+      model.load().fail @box.hide
 
-    $(document.body)
+    @on 'item:show', (model) => @setHash model.attrs.name, model._index
+    @on 'box:hide', => @setHash ''
+
+    @$body = $(document.body)
+      # .on 'click', 'a', (e) -> 
+      #   if (href = e.currentTarget.getAttribute 'href')[0] is '#' and !e.metaKey and !e.ctrlKey and !e.altKey
+      #     e.preventDefault()
+      #     if href.length > 1
+      #       e.stopImmediatePropagation()
       .on 'click', '.btn-share', shareToggle.bind @box
       .on 'click', '.btn-fullscreen', fullscreen
       .on 'appear click', '#lazy', @list.needMore
@@ -30,12 +53,29 @@ class Abscure
 
     $(window)
       .on 'resize orientationchange', (debounce (@box.calcContMetric), 300) 
+      .on 'popstate', (e) => 
+        return true if !(state = window.history.state)
+        # console.log window.history.state
+        if @lastTime > state.time
+          @box.hide()
+          # @lastTime = state.time
+          window.location.hash = ''
+        else if state.i?
+          @trigger 'item:show', @list.collection[state.i]
 
+
+  setHash: (str, i) ->
+    return if !(str?) or ((state = window.history.state) and state.time? and state.time < @lastTime)
+    setTimeout =>
+      state = {time: @lastTime = Date.now()}
+      state.i = i if i?
+      window.history.replaceState state, null, '#' + str
+    , 10
 
 ########################################################################################
 
 
-imgTpl = '<div class="photo loading"><div class="title"></div></div>'
+imgTpl = '<a href="#" class="photo loading"><div class="title"></div></a>'
 fldTpl = '<div class="folder"><a href="" class="title"></a></div>'
 lineBreakTpl = '<div class="linebreak"><div class="tit"></div><a href="#" class="goup"></a><div class="line"></div></div>'
 
@@ -64,10 +104,10 @@ class FldView
     @$el = @template.clone subdir: @model.attrs.subdir
   template: new Tpl fldTpl,
     subdir: -> 
-      title = this.find('.title')[0]
+      title = this.find('.title')
       (subdir) -> 
-        title.innerHtml = subdir
-        title.href = subdir.slice 0, -1
+        title.text subdir
+        title.attr 'href', (subdir.slice 0, -1)
   remove: ->
     @$el.remove()
 
@@ -75,7 +115,7 @@ class ItemModel
   constructor: (@attrs) ->
 
   url: ->
-    @collection.url()
+    (@collection or App.list.collection).url()
 
   load: ->
     if !@__loadPromise
@@ -98,8 +138,10 @@ class ImgView
 
   template: new Tpl imgTpl, 
     name: -> 
-      title = this.find('.title')[0]
-      (name) -> title.innerHtml = name
+      title = this.find('.title')
+      (name) -> 
+        title.text name
+        this.attr 'href', '#' + name
 
   constructor: (@model) ->
     # @model = new ItemModel model
@@ -128,8 +170,7 @@ class ItemCollection extends Array
     @fetch()
 
     App.on 'item:show', =>
-      @getNeighborModel.apply this, arguments
-        .load()
+      (@getNeighborModel.apply this, arguments)?.load()
 
   reset: (models) ->
     @push.apply this, models.map (m, i) => 
@@ -192,10 +233,10 @@ class ItemCollectionView
   $el: $('.photo-list')
   tplLineBreak: new Tpl lineBreakTpl,
     page: -> 
-      title = this.find('.tit')[0]
+      title = this.find('.tit')
       (page) -> 
-        title.innerHtml = page + 1
-        title.id = page + 1
+        title.text page + 1
+        title.attr 'id', page + 1
 
   constructor: (models) ->
     @children = []

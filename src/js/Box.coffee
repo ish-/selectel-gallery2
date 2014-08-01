@@ -121,7 +121,7 @@ class AbcureBox
   #   # shareToggle false
   #   return false
 
-  hide: ->
+  hide: =>
     @$el.removeClass 'show loading'
     setTimeout =>
       @$el.hide()
@@ -133,6 +133,7 @@ class AbcureBox
     setTimeout => 
       $('body,html').scrollTop(@bodyScroll)
     , 0
+    App.trigger 'box:hide'
     @$footer.removeClass 'hidden'
 
   calcContMetric: =>
