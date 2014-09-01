@@ -6,10 +6,10 @@
 Features:
 
 v2
-- switching 3 types of image review with a double click
- - fit
- - fill + crop (maybe ommited)
- - real size with drag and scaling with scroll
+- multitouch
+- resize
+- click to resize to opposite bounds
+  - then you are able to drag
 
 (cause original large images make lags and load too long):
 - increased. distance for lazy load trigger 
@@ -35,9 +35,6 @@ npm install
 grunt build:access
 grunt build:gallery
 ```
-
-/dist/*.html are results files with all resources.
-Node.js >= 0.8 required
 
 [Selectel]: http://selectel.com
 [storage]: http://storage.selectel.ru/
