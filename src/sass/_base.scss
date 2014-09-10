@@ -12,10 +12,10 @@
 @import "compass/utilities";
 @import "compass/utilities/tables";
 @import "compass/utilities/tables/borders";
-@import "utilities/retina-sprites"; // import this once for all sprites
+// @import "utilities/retina-sprites"; // import this once for all sprites
 
-@import "icon/*.png";
-@import "icon-retina/*.png";
+// @import "icon/*.png";
+// @import "icon-retina/*.png";
 
 $sprites: sprite-map("icon/*.png", $spacing: 2px);              // import 1x sprites from icons folder 
 $sprites2x: sprite-map("icon-retina/*.png", $spacing: 4px);     // import 2x sprites from retina folder
@@ -26,46 +26,48 @@ $sprites2x: sprite-map("icon-retina/*.png", $spacing: 4px);     // import 2x spr
 // $sprite2s: sprite-map("social/*.png", $spacing: 2px);              // import 1x sprites from icons folder 
 // $sprite2s2x: sprite-map("social-retina/*.png", $spacing: 4px);     // import 2x sprites from retina folder
 
+// background-image: url(data:image/svg+xml;utf-8,<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>);
 .icon-play {
-    @include retina-sprite(play);
+    // @include retina-sprite(play);
 }
 .icon-pause {
-    @include retina-sprite(pause);
+    // @include retina-sprite(pause);
 }
 .icon-left {
-    @include retina-sprite(left);
+    // @include retina-sprite(left);
 }
 .icon-right {
-    @include retina-sprite(right);
+    // @include retina-sprite(right);
 }
 .icon-share {
-    @include retina-sprite(share);
+    // @include retina-sprite(share);
 }
 .icon-close {
-    @include retina-sprite(close);
+  // background-image: url('data:image/svg+xml;utf-8,<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"><path d="M20,15.7573593 L34.8492424,0.908116908 L39.0918831,5.1507576 L24.2426407,20 L39.0918831,34.8492424 L34.8492424,39.0918831 L20,24.2426407 L5.1507576,39.0918831 L0.908116908,34.8492424 L15.7573593,20 L0.908116908,5.1507576 L5.1507576,0.908116908 L20,15.7573593 Z" fill="#FFFFFF"></path></svg>');
+    // @include retina-sprite(close);
 }
 .icon-fullscreen {
-    @include retina-sprite(fullscreen);
+    // @include retina-sprite(fullscreen);
 }
 
 
 .icon-twitter {
-    @include retina-sprite(twitter);
+    // @include retina-sprite(twitter);
 }
 .icon-vk {
-    @include retina-sprite(vk);
+    // @include retina-sprite(vk);  
 }
 .icon-email {
-    @include retina-sprite(email);
+    // @include retina-sprite(email);
 }
 .icon-gplus {
-    @include retina-sprite(gplus);
+    // @include retina-sprite(gplus);
 }
 .icon-download {
-    @include retina-sprite(download);
+    // @include retina-sprite(download);
 }
 .icon-facebook {
-    @include retina-sprite(facebook);
+    // @include retina-sprite(facebook);
 }
 
 $text        :#555;

@@ -16,26 +16,35 @@ class Abscure
     for name, method of Events
       this[name] = method.bind @ee if typeof method is 'function'
 
-    @on 'all', log
+    # @on 'all', log
   initialize: ->
-    document.body.addEventListener 'click', (e) ->
-      el = e.target
-      if el.tagName is 'A' and (href = el.getAttribute 'href')[0] = '#'
-        if !(e.metaKey or e.altKey or e.ctrlKey or e.shiftKey)
-          e.preventDefault()
-        else
-          e.stopImmediatePropagation()
-        return false
-    , true
+    # document.body.addEventListener 'click', (e) ->
+    #   el = e.target
+    #   if el.tagName is 'A' and (href = el.getAttribute 'href')[0] = '#'
+    #     if !(e.metaKey or e.altKey or e.ctrlKey or e.shiftKey)
+    #       e.preventDefault()
+    #     else
+    #       e.stopImmediatePropagation()
+    #     return false
+    # , true
 
 
     @list = new ItemCollectionView()
     @box = new AbcureBox()
 
     if hash = (window.location.hash.match /^[#!\/]*([\w\W]*)$/)?[1]
-      model = new ItemModel name: hash
-      @trigger 'item:show', model
-      model.load().fail @box.hide
+      if page = (hash.match /^page-([\d]*$)/)?[1]
+        @on 'collection:reset', =>
+          while (Number page) > @list.collection.page  
+            @list.needMore()
+          setTimeout ->
+            window.scroll 0, $('#page-' + page).offset().top
+          , 50
+      else
+        model = new ItemModel name: hash
+        @trigger 'item:show', model
+        model.load().fail @box.hide
+      console.log page
 
     @on 'item:show', (model) => @setHash model.attrs.name, model._index
     @on 'box:hide', => @setHash ''
@@ -49,13 +58,12 @@ class Abscure
       .on 'click', '.btn-share', shareToggle.bind @box
       .on 'click', '.btn-fullscreen', fullscreen
       .on 'appear click', '#lazy', @list.needMore
-      .on 'click', '.goup', -> $('body,html').scrollTop 0
+      # .on 'click', '.goup', -> $('body,html').scrollTop 0
 
     $(window)
       .on 'resize orientationchange', (debounce (@box.calcContMetric), 300) 
       .on 'popstate', (e) => 
         return true if !(state = window.history.state)
-        # console.log window.history.state
         if @lastTime > state.time
           @box.hide()
           # @lastTime = state.time
@@ -147,8 +155,10 @@ class ImgView
     # @model = new ItemModel model
     name = @model.attrs.name
     @$el = @template.clone {name}
-    @$el.on 'click', => 
-      App.trigger 'item:show', @model
+    @$el.on 'click', (e) => 
+      if !(e.metaKey or e.altKey or e.ctrlKey or e.shiftKey)
+        e.preventDefault()
+        App.trigger 'item:show', @model
     # abscureBox.show.bind abscureBox, @model
 
     if THUMBS_OFF
@@ -188,19 +198,27 @@ class ItemCollection extends Array
   url: ->
     HOST + FLD
   fetch: ->
+    $loadingEl = $('.before-load')
+      .addClass 'loading'
     return $.ajax(
       url: @url() + "?format=json"
       beforeSend: (xhr) ->
         xhr.setRequestHeader('X-Web-Mode', 'listing')
     ).done (files, err) =>
-      models = files.filter (file) ->
-        if (/^\./).test file.subdir
+      models = files
+        .filter (file) ->
+          if (/^\./).test file.subdir
+            return false
+          if file.subdir
+            return true
+          if file.content_type
+            return file.content_type.split('/')[0] is 'image'
           return false
-        if file.subdir
-          return true
-        if file.content_type
-          return file.content_type.split('/')[0] is 'image'
-        return false
+        .map (file) ->
+          file.modified = new Date file.last_modified
+          return file
+        .sort (a, b) ->
+          if a.modified > b.modified or a.subdir then -1 else 1
 
       pathArr = document.location.pathname.split('/').filter (el) -> 
         el
@@ -208,6 +226,7 @@ class ItemCollection extends Array
         models.unshift({subdir: '../'})
 
       @reset models
+      $loadingEl.removeClass 'loading'
 
   __itemsPerPage: (->
     ratio = Math.floor($(window).width() / 312) 
@@ -233,10 +252,12 @@ class ItemCollectionView
   $el: $('.photo-list')
   tplLineBreak: new Tpl lineBreakTpl,
     page: -> 
-      title = this.find('.tit')
+      title = this.find '.tit'
+      anchor = this.find 'a'
       (page) -> 
+        anchor.attr href: if page-1 then ('#page-' + page) else '#'
         title.text page + 1
-        title.attr 'id', page + 1
+        title.attr id: 'page-' + (page + 1)
 
   constructor: (models) ->
     @children = []
@@ -255,7 +276,7 @@ class ItemCollectionView
 
     
 
-  appendChild: (model) ->
+  appendChild: (model) =>
     view = if model.attrs.subdir then new FldView(model) else new ImgView(model)
     @children.push view
     @$el.append(view.$el)
@@ -265,7 +286,7 @@ class ItemCollectionView
     if (arr = @collection.getNextPage()).length
       if page
         @$el.append @tplLineBreak.clone {page}
-      arr.forEach (model) => @appendChild(model)
+      arr.forEach @appendChild
       return @needMore
     $('#lazy').remove()
 

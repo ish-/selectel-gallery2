@@ -152,12 +152,12 @@ class AbcureBox
 
   stop: ->
     @playing = false
-    @$el.find('.btn-play span').attr(class: 'icon-play')
+    @$el.find('.btn-play').removeClass 'play'
     return false
 
   play: ->
     if @playing then return @stop() else @playing = true
-    @$el.find('.btn-play span').attr(class: 'icon-pause')
+    @$el.find('.btn-play').addClass 'play'
     @setInterval()
     return false
 

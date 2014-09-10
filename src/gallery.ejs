@@ -14,8 +14,10 @@
 </head>
 <body>
   <div class="header">
-    <a href="http://storage.selectel.ru/vozmozhnosti/fotogalereya/"
-       class="logo"></a>
+    <a href="http://storage.selectel.ru/vozmozhnosti/fotogalereya/" style="margin-left: 2em; margin-top: .2em; position: absolute;">
+      <%- fs.readFileSync('./src/img/svg/selectel.svg') %>
+      <div class="before-load"></div>
+    </a>
     <div class="count"></div>
   </div>
   <div class="wrapper">
@@ -31,23 +33,28 @@
     <div class="light-box-image">
     </div>
 
-    <a href="#" class="btn-fullscreen icon-fullscreen"></a>
+    <a href="#" class="btn-fullscreen icon-fullscreen">
+      <%- fs.readFileSync('./src/img/svg/fullscreen.svg') %>
+    </a>
 
     <div class="light-box-footer">
       <a href="#" class="btn-prev">
-        <span class="icon-left"></span>
+        <span class="icon-left"><%- fs.readFileSync('./src/img/svg/left.svg') %></span>
       </a>
       <a href="#" class="btn-play">
-        <span class="icon-play"></span>
+        <!-- <span style="width: 28px; height: 30px; position: relative;"> -->
+          <span class="icon-play"><%- fs.readFileSync('./src/img/svg/play.svg') %></span>
+          <span class="icon-pause"><%- fs.readFileSync('./src/img/svg/pause.svg') %></span>
+        <!-- </span> -->
       </a>
       <a href="#" class="btn-next">
-        <span class="icon-right"></span>
+        <span class="icon-right"><%- fs.readFileSync('./src/img/svg/right.svg') %></span>
       </a>
       <a href="#" class="btn-share">
-        <span class="icon-share"></span>
+        <span class="icon-share"><%- fs.readFileSync('./src/img/svg/share.svg') %></span>
       </a>
       <a href="#" class="btn-close">
-        <span class="icon-close"></span>
+        <span class="icon-close"><%- fs.readFileSync('./src/img/svg/close.svg') %></span>
       </a>
     </div>
   </div>
