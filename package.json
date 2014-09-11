@@ -1,6 +1,6 @@
 {
-  "name": "photo-gallery",
-  "version": "1.0.1",
+  "name": "selectel-gallery-2",
+  "version": "2.0.1",
   "devDependencies": {
     "base64": "^2.1.0",
     "grunt": "~0.4.1",
