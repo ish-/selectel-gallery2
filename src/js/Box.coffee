@@ -105,6 +105,7 @@ class AbcureBox
       # , 3000, this, [model]
 
     @$el.show().addClass 'show'
+    shareToggle false
   showNeighborModel: (dir) =>
     App.trigger 'item:show', App.list.collection.getNeighborModel @model, dir
 

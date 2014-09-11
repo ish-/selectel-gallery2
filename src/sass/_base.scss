@@ -17,8 +17,8 @@
 // @import "icon/*.png";
 // @import "icon-retina/*.png";
 
-$sprites: sprite-map("icon/*.png", $spacing: 2px);              // import 1x sprites from icons folder 
-$sprites2x: sprite-map("icon-retina/*.png", $spacing: 4px);     // import 2x sprites from retina folder
+// $sprites: sprite-map("icon/*.png", $spacing: 2px);              // import 1x sprites from icons folder 
+// $sprites2x: sprite-map("icon-retina/*.png", $spacing: 4px);     // import 2x sprites from retina folder
 
 // @import "social/*.png";
 // @import "social-retina/*.png";
@@ -27,6 +27,7 @@ $sprites2x: sprite-map("icon-retina/*.png", $spacing: 4px);     // import 2x spr
 // $sprite2s2x: sprite-map("social-retina/*.png", $spacing: 4px);     // import 2x sprites from retina folder
 
 // background-image: url(data:image/svg+xml;utf-8,<svg width="40px" height="40px" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg"></svg>);
+
 .icon-play {
     // @include retina-sprite(play);
 }

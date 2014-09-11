@@ -35,16 +35,17 @@ class Abscure
     if hash = (window.location.hash.match /^[#!\/]*([\w\W]*)$/)?[1]
       if page = (hash.match /^page-([\d]*$)/)?[1]
         @on 'collection:reset', =>
+          console.log page, @list.collection.page
           while (Number page) > @list.collection.page  
             @list.needMore()
           setTimeout ->
+            console.log $('#page-' + page).offset().top
             window.scroll 0, $('#page-' + page).offset().top
-          , 50
+          , 150
       else
         model = new ItemModel name: hash
         @trigger 'item:show', model
         model.load().fail @box.hide
-      console.log page
 
     @on 'item:show', (model) => @setHash model.attrs.name, model._index
     @on 'box:hide', => @setHash ''
@@ -200,11 +201,12 @@ class ItemCollection extends Array
   fetch: ->
     $loadingEl = $('.before-load')
       .addClass 'loading'
-    return $.ajax(
+    ajax = $.ajax
       url: @url() + "?format=json"
       beforeSend: (xhr) ->
         xhr.setRequestHeader('X-Web-Mode', 'listing')
-    ).done (files, err) =>
+    ajax.success (files, err) =>
+      console.log arguments
       models = files
         .filter (file) ->
           if (/^\./).test file.subdir
@@ -220,13 +222,14 @@ class ItemCollection extends Array
         .sort (a, b) ->
           if a.modified > b.modified or a.subdir then -1 else 1
 
-      pathArr = document.location.pathname.split('/').filter (el) -> 
-        el
+      pathArr = document.location.pathname.split('/').filter (el) -> el
       if pathArr.length > 1
-        models.unshift({subdir: '../'})
+        models.unshift subdir: '../'
 
       @reset models
-      $loadingEl.removeClass 'loading'
+
+    ajax.done -> $loadingEl.removeClass 'loading'
+    return ajax
 
   __itemsPerPage: (->
     ratio = Math.floor($(window).width() / 312) 
@@ -318,18 +321,20 @@ fullscreen = (->
     fullscreenMethod.call(el)
 )()
 
+
+## TODO:
 shareToggle = (-> 
   sharing = false 
+  $el = $('.share')
   return (forceVisible = true) ->
     $btnShare = $('.btn-share');
-    $el = $('.share')
     if !forceVisible
-      $btnShare.removeClass('active')
-      $el.hide()
+      $btnShare.removeClass 'active'
+      $el.removeClass 'active'
       return !sharing = false
       
-    $btnShare.toggleClass('active')
-    $el.toggle();
+    $btnShare.toggleClass 'active'
+    $el.toggleClass('active');
     if !sharing != sharing
       url = encodeURI(document.location.origin + document.location.pathname.split('/').slice(0,-1).join('/') + '/' + @model.attrs.name)
       $('.dl').attr(href: @model.attrs.name)

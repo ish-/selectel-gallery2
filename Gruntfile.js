@@ -1,3 +1,5 @@
+var fs = require('fs');
+
 module.exports = function(grunt) {
 	grunt.initConfig({
 		compass: {
@@ -7,15 +9,24 @@ module.exports = function(grunt) {
 		},
 		ejs: {
 			options: {
-				fs: require('fs'),
-        		DEV: false,
+				fs: fs,
+        DEV: false,
+        encodeImg: (function (){
+          var base64encode = require('base64').encode;
+          return function (path) {
+            return 'data:image/svg+xml;base64,' + base64encode(fs.readFileSync(path));
+          }
+        })(),
 			},
 			gallery: {
-				cwd: 'src',
-				src: ['gallery.ejs'],
-				dest: 'dist/',
-				ext: '.html',
-				expand: true
+        files: {
+          './dist/gallery.min.html': './src/gallery.ejs'
+        }
+				// cwd: 'src',
+				// src: ['gallery.ejs'],
+				// dest: 'dist/',
+				// ext: '.html',
+				// expand: true
 			},
 			'gallery-dev': {
         		options: {DEV: true},
@@ -75,7 +86,7 @@ module.exports = function(grunt) {
       },
       gallery: {
         files: {
-          '.temp/gallery.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
+          '.temp/js/gallery.js': ['src/js/Box.coffee', 'src/js/Explorator.coffee', 'src/js/gallery.coffee']
         }
       },
       'gallery-dev': {
@@ -91,6 +102,9 @@ module.exports = function(grunt) {
 		},
     clean: ['.temp', 'dist'],
 		uglify: {
+      options: {
+        beautify: true,
+      },
 			gallery: {
 				files: { '.temp/js/gallery.min.js': ['.temp/js/vendor.js', '.temp/js/gallery.js'] }
 			},
