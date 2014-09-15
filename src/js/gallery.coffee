@@ -35,11 +35,9 @@ class Abscure
     if hash = (window.location.hash.match /^[#!\/]*([\w\W]*)$/)?[1]
       if page = (hash.match /^page-([\d]*$)/)?[1]
         @on 'collection:reset', =>
-          console.log page, @list.collection.page
           while (Number page) > @list.collection.page  
             @list.needMore()
           setTimeout ->
-            console.log $('#page-' + page).offset().top
             window.scroll 0, $('#page-' + page).offset().top
           , 150
       else
@@ -69,8 +67,8 @@ class Abscure
           @box.hide()
           # @lastTime = state.time
           window.location.hash = ''
-        else if state.i?
-          @trigger 'item:show', @list.collection[state.i]
+        # else if state.i?
+        #   @trigger 'item:show', @list.collection[state.i]
 
 
   setHash: (str, i) ->
@@ -206,7 +204,6 @@ class ItemCollection extends Array
       beforeSend: (xhr) ->
         xhr.setRequestHeader('X-Web-Mode', 'listing')
     ajax.success (files, err) =>
-      console.log arguments
       models = files
         .filter (file) ->
           if (/^\./).test file.subdir
