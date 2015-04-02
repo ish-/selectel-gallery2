@@ -270,6 +270,7 @@ class ItemCollectionView
     @empty()
     @renderCount()
     $('#lazy').appear().show()
+    $('.save-all').attr('href', '?download-all-as-zip=' + location.pathname.split('/').slice(1).join('__') + '-' + Date.now() + '.zip')
 
     for i in [0..(Math.floor($(window).height()/312))]
       @needMore()
